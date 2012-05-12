@@ -28,7 +28,9 @@ http://facebook-friend-rank.herokuapp.com/?token=[fb-access-token]
 This returns a hash of FB used IDs to a unitless score.  Use the score value to sort your friend
 lists, higher score means a "better" friend.
 
-The returned hash may not contain entries for all friends, assume a zero value for these friends (worst).
+Currently the access token requires the read-stream permission.
+
+The returned hash may not contain entries for all friends, assume a zero value for these friends (they're the "worst").
 
 
 ## How To Deploy To Heroku
