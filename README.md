@@ -20,6 +20,23 @@ This project attempts to do so anyways.
 It may or may not provide a "reasonable" result anytime you need to rank a list of friends.
 
 
+## Ranking Strategy
+
+*Requires the read_stream permission.*
+
+Currently the ranking strategy is crude. It scans ~500 of a person's most 
+recent feed items, tallies up the occurences of each unique friend ID, and
+returns this as the sorting data hash.
+
+Ideally this evolves to into a adaptive solution which:
+
+1. Determines which permissions are available and picks a strategy optimized
+   for accuracy and speed-of-execution based on available data.
+
+2. Offers biasing facilities, eg. to influence rank based on context or
+   personal affinities defined by the calling app (this is a pipedream).
+
+
 ## Usage
 
 Once deployed (see deployment notes below) this web service has a single JSONP call of interest at the root URL.
