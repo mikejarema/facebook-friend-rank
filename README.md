@@ -1,2 +1,55 @@
-facebook-friend-rank
-====================
+# Facebook Friend Rank
+
+This project does one thing: it attempts to rank a person's Facebook friend list from "best friend" to "worst friend".
+
+It is a stand-alone ruby-based service, built on top of [Goliath](http://goliath.io), with the following goals:
+
+* Deployable to heroku straight from the repository
+
+* Requires only an access token, returns only a hash of IDs to scores to be used in your sorting algorithm
+
+
+## Philosophy
+
+It is impossible to absolutely rank your friends (let alone EVERYONE'S friends) without regard for
+context, cultural nuance, and ultimately the fidelity of an online persona with that of the real world.
+
+This project attempts to do so anyways.
+
+It may or may not provide a "reasonable" result anytime you need to rank a list of friends.
+
+
+## How To Use This Code on Heroku
+
+The following assumes you have a Heroku account in good standing, and have configured your development environment.
+
+This repository is configured to use Memcachier out of the box. Cacheless/alternative cache deployments are not
+supported yet (fork me!).
+    
+    $ git clone git@github.com:mikejarema/facebook-friend-rank; cd facebook-friend-rank
+    Cloning into facebook-friend-rank... done.
+
+    $ heroku apps:create facebook-friend-rank --stack cedar --addons memcachier:25
+    Creating facebook-friend-rank... done, stack is cedar
+    Adding memcachier:25 to facebook-friend-rank... done
+    http://facebook-friend-rank.herokuapp.com/ | git@heroku.com:facebook-friend-rank.git
+    Git remote heroku added
+    
+    $ git push heroku master
+
+
+## How To Use This Code Elsewhere
+
+You're on your own here (fork me!).
+
+
+## Roadmap
+
+* Sample web app bundled with the web service
+
+* Different ranking strategies based on varying levels of permissions provided by the access token
+
+
+## License & Notes
+
+The MIT License - Copyright (c) 2012 [Mike Jarema](http://mikejarema.com)
