@@ -47,7 +47,21 @@ You're on your own here (fork me!).
 
 * Sample web app bundled with the web service
 
+* Error handling
+
+* Specs
+
 * Different ranking strategies based on varying levels of permissions provided by the access token
+
+
+## Acknowledgements
+
+* Thanks to [Ilya Grigorik](http://igvita.com) and his original team at [Postrank](http://postrank.com) 
+  for their phenomenal contributions to the Ruby & Event Machine open source communities, particularly 
+  [Goliath](http://goliath.io) and [EM::Synchrony](https://github.com/igrigorik/em-synchrony).
+
+* Thanks, moreover to Ilya for his post 
+  [0-60: Deploying Goliath on Heroku Cedar](http://www.igvita.com/2011/06/02/0-60-deploying-goliath-on-heroku-cedar/)
 
 
 ## License & Notes
