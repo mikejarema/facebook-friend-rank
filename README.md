@@ -6,7 +6,8 @@ It is a stand-alone ruby-based service, built on top of [Goliath](http://goliath
 
 * Deployable to heroku straight from the repository
 
-* Requires only an access token, returns only a hash of IDs to scores to be used in your sorting algorithm
+* Requires only an access token and user ID (namely the JS SDK FB._authResponse object), returns only a hash of 
+  IDs to scores to be used in your sorting algorithm
 
 
 ## Philosophy
@@ -23,7 +24,7 @@ It may or may not provide a "reasonable" result anytime you need to rank a list 
 
 Once deployed (see deployment notes below) this web service has a single JSONP call of interest at the root URL.
 
-http://facebook-friend-rank.herokuapp.com/?token=[fb-access-token]
+http://facebook-friend-rank.herokuapp.com/?token=[fb-access-token]&id=[current-user-id]
 
 This returns a hash of FB used IDs to a unitless score.  Use the score value to sort your friend
 lists, higher score means a "better" friend.

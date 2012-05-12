@@ -55,12 +55,6 @@ class FacebookFriendRank < CacheableLookup
 
 
 
-
-
-
-
-
-
   # Given an FB user ID and valid token, this class 'sorts' friends in order
   # of decreasing recent engagement.
   #
