@@ -93,8 +93,11 @@ You're on your own here (fork me!).
   for their phenomenal contributions to the Ruby & Event Machine open source communities, particularly 
   [Goliath](http://goliath.io) and [EM::Synchrony](https://github.com/igrigorik/em-synchrony).
 
-* Additional thanks to Ilya for his post 
+* Additional thanks to Ilya for his post: 
   [0-60: Deploying Goliath on Heroku Cedar](http://www.igvita.com/2011/06/02/0-60-deploying-goliath-on-heroku-cedar/)
+
+* Thanks to Jeremy Keeshin for his post and bookmarklet: 
+  [Who Does Facebook Think You Are Searching For?](http://thekeesh.com/2011/08/who-does-facebook-think-you-are-searching-for/)
 
 
 ## License & Notes
