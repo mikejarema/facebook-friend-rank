@@ -158,18 +158,18 @@ class FacebookFriendRank < CacheableLookup
     end
 
     def process_data(data)
+      if data
+        data.each do |item|
+          unless ['status', 'link', 'video', 'photo', 'checkin'].include?(item['type'])
+            puts "Additional processing req'd on #{item['type']}?"
+            y item
+          end
 
-      data.each do |item|
-        unless ['status', 'link', 'video', 'photo', 'checkin'].include?(item['type'])
-          puts "Additional processing req'd on #{item['type']}?"
-          y item
+          process_common(item)
+          process_comments(item['comments']) if item['comments'] && item['comments']['count'] > 0
+          process_likes(item['likes'])       if item['likes']    && item['likes']['count']    > 0
         end
-
-        process_common(item)
-        process_comments(item['comments']) if item['comments'] && item['comments']['count'] > 0
-        process_likes(item['likes'])       if item['likes']    && item['likes']['count']    > 0
       end
-
     end
 
     def process_common(item)
