@@ -115,7 +115,7 @@ class FacebookFriendRank < CacheableLookup
 
               end
 
-              y data if options[:verbose]
+              y data
 
               process_data(data['data'])
 
