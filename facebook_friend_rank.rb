@@ -78,7 +78,6 @@ class FacebookFriendRank < CacheableLookup
 
   FEED_DEPTH = 5   # Number of pages to inspect in the user's feed
   PER_PAGE =   100 # Number of feed items per page
-  CALL_URL =   "https://graph.facebook.com/me/feed?access_token=%s&limit=#{PER_PAGE}"
 
   class Generator
     include EM::Deferrable
@@ -88,7 +87,7 @@ class FacebookFriendRank < CacheableLookup
 
       pending_calls = Atomic.new(FEED_DEPTH)
       calls =         Atomic.new([
-        CALL_URL % token
+        call_url(token: token)
       ])
       @friend_counts = Atomic.new({})
 
@@ -102,7 +101,7 @@ class FacebookFriendRank < CacheableLookup
           end
 
           batch.each do |call|
-            y call
+            y call if options[:verbose]
 
             http = EM::HttpRequest.new(call).get
 
@@ -117,7 +116,7 @@ class FacebookFriendRank < CacheableLookup
 
               end
 
-              y data
+              y data if options[:verbose]
 
               process_data(data['data'])
 
@@ -149,6 +148,10 @@ class FacebookFriendRank < CacheableLookup
       end # timer
 
     end # initialize
+
+    def call_url(options)
+      "https://graph.facebook.com/me/feed?access_token=#{options[:token]}&limit=#{PER_PAGE}"
+    end
 
     def onupdate(&block)
       @onupdate_callbacks << block
