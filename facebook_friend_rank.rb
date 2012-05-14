@@ -102,6 +102,8 @@ class FacebookFriendRank < CacheableLookup
           end
 
           batch.each do |call|
+            y call
+
             http = EM::HttpRequest.new(call).get
 
             http.callback do
