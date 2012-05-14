@@ -2,11 +2,11 @@
 
 This project does one thing: it attempts to rank a person's Facebook friend list from "best friend" to "worst friend".
 
-It is a stand-alone ruby-based service, built on top of [Goliath](http://goliath.io), with the following goals:
+It is a stand-alone ruby-based web service, built on top of [Goliath](http://goliath.io), with the following goals:
 
 * Deployable to heroku straight from the repository
 
-* Requires only an access token and user ID (namely the JS SDK FB._authResponse object), returns only a hash of 
+* Requires only an access token and user ID (both found in the JS SDK FB._authResponse object), returns only a hash of 
   IDs to scores to be used in your sorting algorithm
 
 
@@ -41,14 +41,49 @@ Ideally this evolves to into a adaptive solution which:
 
 Once deployed (see deployment notes below) this web service has a single JSONP call of interest at the root URL.
 
-http://facebook-friend-rank.herokuapp.com/?token=[fb-access-token]&id=[current-user-id]
-
-This returns a hash of FB used IDs to a unitless score.  Use the score value to sort your friend
-lists, higher score means a "better" friend.
+http://facebook-friend-rank.herokuapp.com/?token=[fb-access-token]&id=[current-user-id]&async=[true/false]
 
 Currently the access token requires the read-stream permission.
 
+Because Friend Rank will take awhile to run, there are two modes of operation: asynchronous (progressive) and synchronous.
+
 The returned hash may not contain entries for all friends, assume a zero value for these friends (they're the "worst").
+
+### Asynchronous Usage (Default)
+
+When the JSONP is made, Friend Rank returns immediately with an nearly empty hash. This initial call triggers
+the long-running ranking algorithm to start running in the background.
+
+    {
+      "data":     {},
+      "progress": 0.0
+    }
+
+As it runs it builds up progressively more accurate and comprehensive results, which are found at the same endpoint.
+So subsequent calls will see more ranking data to work with:
+
+    {
+      "data":     {"123451":9,"123452":99,"123453":1,"123454":1,"123455":1,"123456":1,"123457":1,"123458":2,"123459":2},
+      "progress": 0.2
+    }
+
+When "progress" reaches 1.0, the background process is complete.
+
+The caller of this endpoint may choose to act on the friend rank data at any point, for example to sort
+friends early on in the process, or wait until the algorithm is complete before doing anything. Frankly speaking, 
+Friend Rank is a heuristic which attempts to improve accuracy with more computation. Early results should have
+reasonable fidelity to those determined by a full run of the ranking algorithm.
+
+This endpoint is fast, so it may be polled frequently.
+
+Results are cached for an hour.
+
+### Synchronous Usage
+
+By setting async=false in the call, you're instructing Friend Rank to return only when it is finished computing
+results in their entirety.
+
+Note: an application which mixes asynchronous and synchronous calls may exhibit funny behaviour as a common cache is used.
 
 
 ## How To Deploy To Heroku
@@ -76,9 +111,6 @@ You're on your own here (fork me!).
 * Sample web app bundled with the web service
 
 * Ensure all friends have a score in returned results
-
-* Progressive update, crude results returned quickly with more accurate results being computed against that
-  access token for later use
 
 * Error handling
 

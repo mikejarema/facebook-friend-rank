@@ -43,7 +43,7 @@ class CacheableLookup < Goliath::API
     end
     
     def set(key, value, ttl=nil, options=nil)
-      super(key, value, ttl=nil, options=nil)
+      super(key, value, ttl, options)
     rescue Exception => e
       puts "Memcache failed: #{e.class} (#{e.message})"
       nil
@@ -54,8 +54,8 @@ class CacheableLookup < Goliath::API
     # NOTE: in development the MEMCACHIER references nil out (assumes localhost & unauthenticated cache)
     DalliWrapper.new(
       ENV['MEMCACHIER_SERVERS'], 
-      username: ENV['MEMCACHIER_USERNAME'], password: ENV['MEMCACHIER_PASSWORD'],
-      async: true, expires_in: CACHE_TTL
+      username: ENV['MEMCACHIER_USERNAME'], password: ENV['MEMCACHIER_PASSWORD'], :expires_in => CACHE_TTL,
+      async: false  # <-- NOTE: async disabled, it doesn't work in a Fiber (as req'd by facebook_friend_rank.rb)
     )
   end
   

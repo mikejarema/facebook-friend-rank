@@ -9,46 +9,60 @@ require 'em-http-request'
 require 'cacheable_lookup'
 
 class FacebookFriendRank < CacheableLookup
-  
+
+  PROGRESSIVE_UPDATE_TTL = 30 # seconds
+
   def response(env)
-    id = params['id']
-    token = params['token']
+    id =          params['id']
+    token =       params['token']
+    progressive = !params.has_key?('async') || params['async'].downcase == 'true' # async by default
 
     # Grab cached sort order
     sort_order = cache.get(cache_key(id))
 
     # Compute and cache sort order if not already cached
-    unless sort_order
-      # Compute
-      sort_order = compute_results(id, token)
-
-      # Cache
-      cache.set(cache_key(id), sort_order, CACHE_TTL)
-    end
+    sort_order = compute_and_cache_results(id, token, progressive) unless sort_order
 
     [200, {'Content-Type' => 'application/json'}, sort_order]
   end
 
   def cache_key(id)
-    "friend_sort::#{id}"
+    "friend_rank::#{id}"
   end
 
-  def compute_results(id, token)
+  def compute_and_cache_results(id, token, progressive)
     fiber = Fiber.current
 
     resolver = Generator.new(id, token)
 
+    done = Atomic.new(false)
+
+    progress = Atomic.new(nil)
+
     resolver.callback do |r|
-      fiber.resume(r)
+      puts "Completed friend rank for #{id}"
+      done.value { true }
+      cache.set(cache_key(id), r, CACHE_TTL)
+      fiber.resume(r) if fiber.alive?
     end
 
     resolver.errback do |r|
-      fiber.resume(r)
+      puts "Failure (#{r.class}) on friend rank for #{id}:"
+      puts "#{r}"
+      fiber.resume(r) if fiber.alive?
+    end
+
+    resolver.onupdate do |r|
+      if !done.value && (!progress.value || r[:progress] > progress.value)
+        progress.update{r[:progress]}
+        cache.set(cache_key(id), r, PROGRESSIVE_UPDATE_TTL)
+      end
+      fiber.resume(r) if progressive && fiber.alive?
     end
 
     computed_results = Fiber.yield
 
-    raise resp if computed_results.is_a?(Exception)
+    raise computed_results if computed_results.is_a?(Exception)
 
     computed_results
   end
@@ -69,6 +83,8 @@ class FacebookFriendRank < CacheableLookup
     include EM::Deferrable
 
     def initialize(id, token)
+      @onupdate_callbacks = []
+
       pending_calls = Atomic.new(FEED_DEPTH)
       calls =         Atomic.new([
         CALL_URL % {token: token}
@@ -85,16 +101,12 @@ class FacebookFriendRank < CacheableLookup
           end
 
           batch.each do |call|
-            puts call
-
             http = EM::HttpRequest.new(call).get
 
             http.callback do
               data = JSON.parse(http.response)
 
-              pending_calls.update {|v| v - 1}
-
-              if pending_calls.value > 0 && data['paging'] && data['paging']['next']
+              if pending_calls.value > 1 && data['paging'] && data['paging']['next']
                 calls.update {|v| v << data['paging']['next']}
 
               else
@@ -104,65 +116,70 @@ class FacebookFriendRank < CacheableLookup
 
               process_data(data['data'])
 
+              pending_calls.update {|v| v - 1}
+
               if pending_calls.value <= 0
                 timer.cancel
                 @friend_counts.update {|v| v.delete(id.to_i); v}
-                self.succeed @friend_counts.value
+                self.succeed({:data => @friend_counts.value, :progress => 1.0})
               end
             end
 
-            http.errback do |data|
+            http.errback do
               timer.cancel
-              self.fail Exception.new(data)
+              self.fail http.error
             end
           end # batch.each
 
 
         end # if !calls.value.empty
 
+        @onupdate_callbacks.each do |c| 
+          c.call({
+            :data => @friend_counts.value, 
+            :progress => (FEED_DEPTH - pending_calls.value) / FEED_DEPTH.to_f
+          })
+        end
+
       end # timer
 
     end # initialize
 
+    def onupdate(&block)
+      @onupdate_callbacks << block
+    end
+
     def process_data(data)
 
       data.each do |item|
-
-        case item['type']
-        when "status"
-          process_status(item)
-        when "link"
-          process_link(item)
-        else
-          puts "Cannot process #{item['type']}"
+        unless ['status', 'link', 'video', 'photo', 'checkin'].include?(item['type'])
+          puts "Additional processing req'd on #{item['type']}?"
+          y item
         end
 
-        if item['comments'] && item['comments']['count']
-          process_comments(item['comments'])
-        end
+        process_common(item)
+        process_comments(item['comments']) if item['comments'] && item['comments']['count'] > 0
+        process_likes(item['likes'])       if item['likes']    && item['likes']['count']    > 0
+      end
 
-      end # data.each
+    end
 
-    end # process_data
-
-    def process_link(link)
+    def process_common(item)
       ids = []
+      
+      ids << item['from']['id'] if item['from'] && item['from']['id']
 
-      ids << link['from']['id'] if link['from'] && link['from']['id']
-      ids << link['to']['id'] if link['to'] && link['to']['id']
-      ids << extract_ids_from_tags(link, 'message_tags')
+      # To metadata is either a single entry or an array, handle both
+      ids << item['to']['id'] if item['to'] && item['to']['id']
+      ids << item['to']['data'].map{|i| i['id']}  if item['to'] && item['to']['data']
+
+      # Handle *_tags payloads
+      item.keys.each do |k|
+        ids << extract_ids_from_tags(item, k) if k =~ /_tags$/ 
+      end
 
       update_friend_counts(ids)
-    end # process_link
-
-    def process_status(status)
-      ids = []
-
-      ids << status['from']['id'] if status['from'] && status['from']['id']
-      ids << extract_ids_from_tags(status, 'story_tags')
-
-      update_friend_counts(ids)
-    end # process_status
+    end
 
     def process_comments(comments)
       if comments['data']
@@ -170,13 +187,21 @@ class FacebookFriendRank < CacheableLookup
         comments['data'].each {|i| ids << i['from']['id']}
         update_friend_counts(ids)
       end
-    end # process_comments
+    end
+
+    def process_likes(likes)
+      if likes['data']
+        ids = []
+        likes['data'].each {|i| ids << i['id']}
+        update_friend_counts(ids)
+      end
+    end
 
     def extract_ids_from_tags(item, tag_type)
       item[tag_type].map do |k,v| 
         v.is_a?(Enumerable) ? v.map{|i| i['id']} : v
       end if item[tag_type]
-    end # extract_ids_from_tags
+    end
 
     def update_friend_counts(ids)
       unless ids.empty?
@@ -187,7 +212,7 @@ class FacebookFriendRank < CacheableLookup
           v
         end
       end
-    end # update_friend_counts
+    end
 
   end
 
