@@ -16,6 +16,7 @@ class FacebookFriendRank < CacheableLookup
     id =          params['id']
     token =       params['token']
     progressive = !params.has_key?('async') || params['async'].downcase == 'true' # async by default
+    @verbose =    params.has_key?('verbose') && params['verbose'].downcase == 'true'
 
     # Grab cached sort order
     sort_order = cache.get(cache_key(id))
@@ -33,7 +34,7 @@ class FacebookFriendRank < CacheableLookup
   def compute_and_cache_results(id, token, progressive)
     fiber = Fiber.current
 
-    resolver = Generator.new(id, token)
+    resolver = Generator.new(id, token, :verbose => @verbose)
 
     done = Atomic.new(false)
 
@@ -82,7 +83,7 @@ class FacebookFriendRank < CacheableLookup
   class Generator
     include EM::Deferrable
 
-    def initialize(id, token)
+    def initialize(id, token, options = {})
       @onupdate_callbacks = []
 
       pending_calls = Atomic.new(FEED_DEPTH)
@@ -113,6 +114,8 @@ class FacebookFriendRank < CacheableLookup
                 pending_calls.update { 0 }
 
               end
+
+              y data if options[:verbose]
 
               process_data(data['data'])
 
