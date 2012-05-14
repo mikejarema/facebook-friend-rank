@@ -78,7 +78,7 @@ class FacebookFriendRank < CacheableLookup
 
   FEED_DEPTH = 5   # Number of pages to inspect in the user's feed
   PER_PAGE =   100 # Number of feed items per page
-  CALL_URL =   "https://graph.facebook.com/me/feed?access_token=%{token}&limit=#{PER_PAGE}"
+  CALL_URL =   "https://graph.facebook.com/me/feed?access_token=%s&limit=#{PER_PAGE}"
 
   class Generator
     include EM::Deferrable
@@ -88,7 +88,7 @@ class FacebookFriendRank < CacheableLookup
 
       pending_calls = Atomic.new(FEED_DEPTH)
       calls =         Atomic.new([
-        CALL_URL % {token: token}
+        CALL_URL % token
       ])
       @friend_counts = Atomic.new({})
 
