@@ -21,4 +21,21 @@ class RackRoutes < Goliath::API
     run FacebookFriendRank.new
   end
 
+  # Demo related routes
+  use(Rack::Static, :urls => ["/demo"])
+
+  get "/demo/channel.html" do 
+    run Proc.new { |env| 
+      [
+        200,
+        {
+          'Content-Type' => 'text/html',
+          'Pragma' => 'public',
+          'Cache-Control' => 'max-age=31536000'
+        },
+        '<script src="//connect.facebook.net/en_US/all.js"></script>'
+      ]
+    }
+  end
+
 end

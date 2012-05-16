@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Facebook Friend Rank Demo</title>
+  <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
+
+  <script type="text/javascript">
+    var Demo = {
+      friendTemplate:
+        _.template("<div class='friend'><img src='http://graph.facebook.com/<%= id %>/picture/square'><span><%= i %>. <%= name %></span></div>")
+    };
+
+    $(function() {
+      $('#fb-login').click(function() { 
+        loginWithFacebook();
+        return false;
+      });
+
+      $('#fb-friend-rank').click(function() {
+        Demo.progress = 0.0;
+        applyFriendRank();
+        return false;
+      })
+    });
+
+    function loginWithFacebook() {
+      FB.login(function(response) {
+        if (response.authResponse) {
+          initializeDemo();
+        } else {
+          // User didn't authorize
+        }
+      }, {scope: 'read_stream'}); 
+    }
+
+    function initializeDemo() {
+      $("#logged-in").show();
+      $("#logged-out").hide();
+      loadFriends();
+    }
+
+    function loadFriends() {
+      FB.api('/me/friends', function(response) {
+        Demo.friends = response.data;
+        renderFriends();
+      });
+    }
+
+    function renderFriends() {
+      $('#friends').empty();
+      sortFriends();
+      _.each(Demo.friends, function(friend, i) {
+        $('#friends').append(
+          Demo.friendTemplate({id: friend.id, name: friend.name, i: i + 1})
+        );
+      });
+    }
+
+    function sortFriends() {
+      if (Demo.friendRank) {
+        Demo.friends = _.sortBy(
+          Demo.friends, 
+          function(friend) { return Demo.friendRank[friend.id] || 0; }
+        ).reverse(); // Descending order ('best friends first')
+      }
+    }
+
+    function applyFriendRank() {
+      $.ajax(
+        '/',
+        {
+          data: {token: FB._authResponse.accessToken, id: FB._authResponse.userID},
+          success: handleFriendRankResponse
+        }
+      );
+
+      function handleFriendRankResponse(data) {
+        if (data.progress > Demo.progress) {
+          Demo.friendRank = data.data;
+          Demo.progress = data.progress;
+          renderFriends();
+        }
+
+        if (Demo.progress < 1.0) {
+          $('#status').html("Ranking Friends... " + Math.round(Demo.progress * 100) + "%");
+          setTimeout(applyFriendRank, 250); // Call again in 250ms
+
+        } else {
+          $('#status').html("Friend Rank Complete");
+
+        }
+      }
+    }
+  </script>
+</head>
+
+<body>
+
+  <!-- Facebook JS SDK Initialization (https://developers.facebook.com/docs/reference/javascript/) -->
+  <div id="fb-root"></div>
+  <script type="text/javascript">
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '366378313409809', // App ID
+        channelUrl : '//' + window.location.host + '/demo/channel.html', // Channel File
+        status     : true, // check login status
+        cookie     : true, // enable cookies to allow the server to access the session
+        xfbml      : true  // parse XFBML
+      });
+    };
+
+    // Load the SDK Asynchronously
+    (function(d){
+      var js, id = 'facebook-jssdk', ref = d.getElementsByTagName('script')[0];
+      if (d.getElementById(id)) {return;}
+      js = d.createElement('script'); js.id = id; js.async = true;
+      js.src = "//connect.facebook.net/en_US/all.js";
+      ref.parentNode.insertBefore(js, ref);
+    }(document));
+  </script>
+
+  <!-- Displayed for non-logged in user -->
+  <div id="logged-out">
+    <a href="#" id="fb-login">Login with Facebook</a>
+  </div>
+
+  <!-- Displayed upon login -->
+  <div id="logged-in" style="display: none">
+    <div id="dashboard">
+      <a href="#" id="fb-friend-rank">Apply Friend Rank</a>
+      <span id="status"></span>
+    </div>
+    <div id="friends"></div>
+  </div>
+
+  <style type="text/css">
+    .friend { float: left; width: 300px; overflow: hidden; height: 50px; margin-top: 10px; }
+      .friend img { height: 50px; width: 50px; vertical-align: middle; margin-right: 5px; }
+
+    #status { margin-left: 30px; font-weight: bold; color: red; }
+  </style>
+
+</body>
+
+</html>
