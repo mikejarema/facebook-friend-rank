@@ -9,8 +9,9 @@ It is a stand-alone ruby-based web service, built on top of [Goliath](http://gol
 * Requires only an access token and user ID (both found in the JS SDK FB._authResponse object), returns only a hash of 
   IDs to scores to be used in your sorting algorithm
 
-**Try the quick demo app here to see some sample ranking results: 
-http://facebook-friend-rank.herokuapp.com/demo/index.html**
+**Try the quick demo app here to see some sample ranking results:** 
+
+**http://facebook-friend-rank.herokuapp.com/demo/index.html**
 
 
 ## Philosophy
@@ -104,6 +105,7 @@ Note: Goliath requires a restart each time its files are changed.
 
 Be sure to add a `/etc/hosts` entry mapping `dev.facebook-friend-rank.herokuapp.com` to `127.0.0.1` in
 order to be able to login using the bundled Facebook App ID. Then visit the demo app on your dev machine here:
+
 http://dev.facebook-friend-rank.herokuapp.com:5000/demo/index.html
 
 
