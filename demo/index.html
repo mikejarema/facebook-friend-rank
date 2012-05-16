@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Facebook Friend Rank Demo</title>
-  
+
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
   <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.3.3/underscore-min.js"></script>
 
@@ -20,6 +20,7 @@
 
       $('#fb-friend-rank').click(function() {
         Demo.progress = 0.0;
+        _gaq.push(['_trackEvent', 'User', 'Friend Rank']);
         applyFriendRank();
         return false;
       })
@@ -28,9 +29,11 @@
     function loginWithFacebook() {
       FB.login(function(response) {
         if (response.authResponse) {
+          _gaq.push(['_trackEvent', 'User', 'Login', 'Succeeded']);
           initializeDemo();
         } else {
           // User didn't authorize
+          _gaq.push(['_trackEvent', 'User', 'Login', 'Failed']);
         }
       }, {scope: 'read_stream'}); 
     }
@@ -44,6 +47,7 @@
     function loadFriends() {
       FB.api('/me/friends', function(response) {
         Demo.friends = response.data;
+        _gaq.push(['_trackEvent', 'Data', 'Friends', 'Loaded', response.data.length]);
         renderFriends();
       });
     }
@@ -84,10 +88,12 @@
         }
 
         if (Demo.progress < 1.0) {
+          _gaq.push(['_trackEvent', 'Data', 'Friend Rank', 'Loaded', data.progress * 100]);
           $('#status').html("Ranking Friends... " + Math.round(Demo.progress * 100) + "%");
           setTimeout(applyFriendRank, 250); // Call again in 250ms
 
         } else {
+          _gaq.push(['_trackEvent', 'Data', 'Friend Rank', 'Complete']);
           $('#status').html("Friend Rank Complete");
 
         }
