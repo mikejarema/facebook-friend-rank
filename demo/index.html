@@ -75,7 +75,7 @@
       $.ajax(
         '/',
         {
-          data: {token: FB._authResponse.accessToken, id: FB._authResponse.userID},
+          data: {token: FB.getAuthResponse().accessToken, id: FB.getAuthResponse().userID},
           success: handleFriendRankResponse
         }
       );
