@@ -6,7 +6,7 @@ It is a stand-alone ruby-based web service, built on top of [Goliath](http://gol
 
 * Deployable to heroku straight from the repository
 
-* Requires only an access token and user ID (both found in the JS SDK FB._authResponse object), returns only a hash of 
+* Requires only an access token and user ID (both found in the JS SDK FB.getAuthResponse() object), returns only a hash of 
   IDs to scores to be used in your sorting algorithm
 
 **Try the quick demo app here to see some sample ranking results:** 
