@@ -6,7 +6,7 @@ GEM
       rack (~> 1.1)
     atomic (1.0.1)
     cookiejar (0.3.0)
-    dalli (2.0.5)
+    dalli (3.2.3)
     em-http-request (1.0.2)
       addressable (>= 2.2.3)
       cookiejar
